@@ -24,13 +24,13 @@ from src.utils.error_listener import NewErrorListener, SyntaxException
 
 
 def _make_lexer(source: str):
-    from build.src.grammar.MKotlinLexer import MKotlinLexer
+    from src.grammar.MKotlinLexer import MKotlinLexer
 
     return MKotlinLexer(InputStream(source))
 
 
 def _make_parser(source: str):
-    from build.src.grammar.MKotlinParser import MKotlinParser
+    from src.grammar.MKotlinParser import MKotlinParser
 
     lexer = _make_lexer(source)
     tokens = CommonTokenStream(lexer)
@@ -67,7 +67,7 @@ class Tokenizer:
 
             result.append("EOF")
         except LexerError as e:
-            result.append(f"Error: {e.message}")
+            result.append(f"{e.message}")
         print("===", result)
         return ",".join(result)
 

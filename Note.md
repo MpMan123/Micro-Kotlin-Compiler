@@ -11,3 +11,5 @@ fun main() {\n
     }
 input nayf sai nhung cho ra success
 ```
+
+- dang check lai statement, da kiem tra toi phan when

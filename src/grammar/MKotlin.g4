@@ -57,10 +57,10 @@ decl
     | funcDecl
     ;
 funcDecl
-    : FUN ID LP parameterList? RP (COLON returnType)? blockStmt
+    : FUN ID LP parameterList? RP (COLON returnType)? body
     ;
 parameterList
-    : parameter (COMMA parameter)*
+    : parameter COMMA parameterList | parameter
     ;
 parameter
     : ID COLON dataType
@@ -68,46 +68,82 @@ parameter
 returnType
     : dataType | TYPE_UNIT
     ;
-primaryExpr
-    : ID | INT_LIT | STRING_LIT | FLOAT_LIT | TRUE | FALSE | LP expr RP | whenExpr | ifExpr;
+
 ifExpr
-    : IF LP booleanExpr RP expr ELSE expr;
+    : IF LP booleanExpr RP expr ELSE expr
+    ;
+
 whenExpr
-    : WHEN (LP expr RP)? LB (whenBranch | NEWLINE | SEMICOLON)* elseBranch (NEWLINE | SEMICOLON)* RB
+    : WHEN (LP expr RP)? LB terminator* whenBranchList elseBranch? RB
+    ;
+whenBranchList
+    : whenBranch terminator*
+    | whenBranch terminator* whenBranchList
     ;
 whenBranch
     : expr (COMMA expr)* ARROW stmt
     ;
 elseBranch
-    : ELSE ARROW stmt
+    : ELSE ARROW stmt terminator*
     ;
-functionCallExpr
-    : ID LP argumentList? RP;
-postfixExpr
-    : (primaryExpr | functionCallExpr) (INC | DEC | DOT ID | LP argumentList? RP)*;
-unaryExpr
-    : (MINUS | PLUS | LOGIC_NOT | INC | DEC) unaryExpr | postfixExpr;
-multiplicativeExpr
-    : unaryExpr ((MUL | DIV | MOD) multiplicativeExpr)*;
-additiveExpr
-    : multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
-rangeExpr
-    : additiveExpr (RANGE additiveExpr)?;
-relationalExpr
-    : rangeExpr ((LT | GT | GTE | LTE) rangeExpr)*;
-equalityExpr
-    : relationalExpr ((EQ | NOT_EQ) relationalExpr)*;
-logicAndExpr
-    : equalityExpr (LOGIC_AND equalityExpr)*;
-logicOrExpr
-    : logicAndExpr (LOGIC_OR logicAndExpr)*;
-assignmentExpr
-    : (ID ASSIGN)* logicOrExpr;
-expr
-    : assignmentExpr;
-booleanExpr
-    : logicOrExpr;
+assignableExpr
+    : ID
+    | assignableExpr DOT ID
+    ;
 
+expr
+    : assignmentExpr
+    ;
+assignmentExpr
+    : assignableExpr ASSIGN assignmentExpr
+    | whenExpr
+    | ifExpr
+    | logicOrExpr;
+logicOrExpr
+    : logicOrExpr LOGIC_OR logicAndExpr 
+    | logicAndExpr
+    ;
+logicAndExpr
+    : logicAndExpr LOGIC_AND equalityExpr 
+    | equalityExpr
+    ;
+equalityExpr
+    : equalityExpr (EQ | NOT_EQ) relationalExpr 
+    | relationalExpr
+    ;
+relationalExpr
+    : relationalExpr (LT | GT | GTE | LTE) rangeExpr 
+    | rangeExpr
+    ;
+rangeExpr
+    : additiveExpr (RANGE additiveExpr)?
+    ;
+additiveExpr
+    : additiveExpr (PLUS | MINUS) multiplicativeExpr
+    | multiplicativeExpr
+    ;
+multiplicativeExpr
+    : multiplicativeExpr (MUL | DIV | MOD) unaryExpr
+    | unaryExpr
+    ;
+unaryExpr
+    : (MINUS | PLUS | LOGIC_NOT | INC | DEC) unaryExpr 
+    | postfixExpr
+    ;
+postfixExpr
+    : primaryExpr
+    | postfixExpr (INC | DEC)
+    | postfixExpr DOT ID
+    | postfixExpr LP argumentList? RP
+    ;
+primaryExpr
+    : ID | INT_LIT | STRING_LIT | FLOAT_LIT | TRUE | FALSE | LP expr RP | whenExpr | ifExpr
+    ;
+
+
+booleanExpr
+    : logicOrExpr
+    ;
 
 /****************************************************************************/
 /*																	 		*/
@@ -129,12 +165,13 @@ primitiveType
 /* 																			*/
 /****************************************************************************/
 dataClass
-    : DATA_CLASS ID LP dataClassMemberList?  RP;
+    : DATA_CLASS ID LP (NEWLINE* dataClassMemberList NEWLINE*)? RP
+    ;
 dataClassMemberList
-    : dataClassMember (COMMA dataClassMember)* COMMA?;
+    : dataClassMember COMMA NEWLINE* dataClassMemberList
+    | dataClassMember;
 dataClassMember
     : ID COLON dataType;
-// datatype created by user
 dataType
     : primitiveType | ID;
 
@@ -145,52 +182,23 @@ dataType
 /* 													*/
 /****************************************************/
 constructor
-    : ID LP argumentList? RP;
+    : expr;
 argumentList
-    : expr (COMMA expr)*;
-/****************************************************/
-/*													*/
-/*                  3.2. Member Access              */
-/* 													*/
-/****************************************************/
-memberAccess
-    : ID (DOT ID)+;
-/****************************************************************************/
-/*																	 		*/
-/*							4. Variable Declaration							*/
-/* 																			*/
-/****************************************************************************/
-variableDeclarationExpr
-    : VAL ID (COLON dataType)? ASSIGN expr
-    | VAR ID (COLON dataType)? (ASSIGN expr)?;
-
+    : expr COMMA argumentList | expr;
 /****************************************************************************/
 /*																	 		*/
 /*							    4. Statement            	    			*/
 /* 																			*/
 /****************************************************************************/
-variableDeclareStmt
-    : variableDeclarationExpr;
-ifStmt
-    : IF LP booleanExpr RP stmt+ (ELSE stmt+)?;
-blockStmt
-    : LB (stmt | NEWLINE | SEMICOLON)* RB;
-whileStmt
-    : WHILE booleanExpr (stmt | blockStmt);
-forStmt
-    : FOR LP ID IN INT_LIT RANGE INT_LIT RP stmt*;
-whenStmt
-    : WHEN (LP expr RP)? LB (whenBranch | NEWLINE | SEMICOLON)* (elseBranch (NEWLINE | SEMICOLON)*)? RB;
-breakStmt
-    : BREAK;
-continueStmt
-    : CONTINUE;
-returnStmt
-    : RETURN expr?;
-expressionStmt
-    : expr;
+stmtList
+    : stmt (terminator+ stmt)* terminator*
+    ;
+terminator
+    : NEWLINE
+    | SEMICOLON
+    ;
 stmt
-    : variableDeclareStmt
+    : varDeclStmt
     | ifStmt
     | whileStmt
     | forStmt
@@ -199,7 +207,39 @@ stmt
     | continueStmt
     | returnStmt
     | expressionStmt
-    | blockStmt;
+    | block
+    ;
+
+body
+    : stmt
+    | block
+    ;
+
+varDeclStmt
+    : VAL ID (COLON dataType)? ASSIGN expr
+    | VAR ID (COLON dataType)? (ASSIGN expr)?;
+ifStmt
+    : IF LP booleanExpr RP body (ELSE body)?;
+whileStmt
+    : WHILE LP booleanExpr RP body
+    ;
+block
+    : LB terminator* stmtList? RB
+    ;
+forStmt
+    : FOR LP ID IN rangeExpr RP body;
+whenStmt
+    : whenExpr
+    ;
+breakStmt
+    : BREAK;
+continueStmt
+    : CONTINUE;
+returnStmt
+    : RETURN expr?;
+expressionStmt
+    : expr;
+
 
 // TODO: Define lexer rules here
 // Keywords, operators, literals, comments, NEWLINE (statement separator), ...
@@ -211,7 +251,7 @@ stmt
 // - Keyword/type rules must precede IDENT
 // - NEWLINE is a real token — do NOT skip newlines in WS
 
-INLINE_COMMENT: '//' .*? ('\n' | '\r\n' | EOF) -> skip ;
+INLINE_COMMENT: '//' .*? ('\n' | '\r\n' | EOF) -> skip;
 BLOCK_COMMENT: [/][*].*?[*][/] -> skip;
 
 // --- LEXER RULES FOR KEYWORDS ---
@@ -239,16 +279,16 @@ WHILE    : 'while' ;
 // Assignment
 ASSIGN   : '=' ;
 
+// Unary
+INC      : '++' ;
+DEC      : '--' ;
+
 // Arithmetic
 PLUS     : '+' ;
 MINUS    : '-' ;
 MUL      : '*' ;
 DIV      : '/' ;
 MOD      : '%' ;
-
-// Unary
-INC      : '++' ;
-DEC      : '--' ;
 
 // Relational
 EQ       : '==' ;
@@ -263,8 +303,8 @@ LOGIC_OR  : '||' ;
 LOGIC_AND : '&&' ;
 LOGIC_NOT : '!' ;
 
-DOT      : '.' ;
 RANGE    : '..' ;
+DOT      : '.' ;
 
 // --- LEXER RULES FOR SEPARATOR ---
 LB      : '{';
@@ -286,7 +326,7 @@ fragment F_TRAIL: [Ff];
 
 FLOAT_LIT
         : F_DIGIT F_DECIMAL F_EXP? F_TRAIL?
-        | F_DIGIT '.' F_EXP? F_TRAIL?
+        | F_DIGIT '.' {self._input.LA(1) != ord('.')}? F_EXP? F_TRAIL?
         | F_DECIMAL F_EXP? F_TRAIL?
         | F_DIGIT F_EXP F_TRAIL?
         | F_DIGIT F_TRAIL
@@ -303,14 +343,12 @@ BOOL_LIT: TRUE | FALSE;
 // --- STRING LITERAL ---
 // --- LEXICAL ERROR TOKENS --- 
 NEWLINE: '\r'?'\n';
-HAHA:
-    INVALID_ESCAPE;
 ILLEGAL_ESCAPE 
     : '"' (CHAR | VALID_ESCAPE)* INVALID_ESCAPE ;
-UNCLOSE_STRING
-    : '"' (CHAR | VALID_ESCAPE)* (NEWLINE | EOF) ;
 STRING_LIT
     : '"' (CHAR | VALID_ESCAPE)* '"';
+UNCLOSE_STRING
+    : '"' (CHAR | VALID_ESCAPE)* (NEWLINE | EOF) ;
 fragment VALID_ESCAPE
     : '\\' [bfrnt"\\$];
 fragment INVALID_ESCAPE

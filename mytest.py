@@ -25,7 +25,17 @@ from tests.utils import Tokenizer, Parser
 if __name__ == '__main__':
     # CÁCH 1: Định nghĩa sẵn danh sách các input muốn test trực tiếp trong code
     # inp = 'fun main() {\n    printString("Hello, World!")\n}'
-    inp = "@"
+    inp = """
+    fun a() {
+
+
+
+
+
+    return 5
+    }
+"""
+
     try:
         # lexer = MKotlinLexer(InputStream(inp))
         # token_stream = CommonTokenStream(lexer)
