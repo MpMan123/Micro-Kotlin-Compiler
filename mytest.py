@@ -21,21 +21,12 @@ from antlr4 import *
 from MKotlinLexer import MKotlinLexer
 from src.grammar.lexererr import LexerError, ErrorToken, UncloseString, IllegalEscape
 from tests.utils import Tokenizer, Parser
+from tests.utils import ASTGenerator
 
 if __name__ == '__main__':
     # CÁCH 1: Định nghĩa sẵn danh sách các input muốn test trực tiếp trong code
     # inp = 'fun main() {\n    printString("Hello, World!")\n}'
-    inp = """
-    fun a() {
-
-
-
-
-
-    return 5
-    }
-"""
-
+    inp = "data class Point(x: Int, y: Int)"
     try:
         # lexer = MKotlinLexer(InputStream(inp))
         # token_stream = CommonTokenStream(lexer)
@@ -47,8 +38,9 @@ if __name__ == '__main__':
         #         print(f"<{token_name}> (Type ID: {token.type})")
         #     else:
         #         print(f"Token: '{token.text}' (Type ID: {token.type}, Name: {token_name})")
-        print(Tokenizer.tokens(inp))
+        # print(Tokenizer.tokens(inp))
         # print(Parser.parse(inp))
+        print(repr(ASTGenerator.gen(inp)))
         
     except (LexerError, ErrorToken, UncloseString, IllegalEscape) as e:
         raise e

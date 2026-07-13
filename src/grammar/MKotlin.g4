@@ -53,7 +53,7 @@ program
     : (decl | NEWLINE)* EOF
     ;
 decl
-    : dataClass
+    : dataClassDecl
     | funcDecl
     ;
 funcDecl
@@ -164,7 +164,7 @@ primitiveType
 /*								3. Data Class							    */
 /* 																			*/
 /****************************************************************************/
-dataClass
+dataClassDecl
     : DATA_CLASS ID LP (NEWLINE* dataClassMemberList NEWLINE*)? RP
     ;
 dataClassMemberList
@@ -212,7 +212,6 @@ stmt
 
 body
     : stmt
-    | block
     ;
 
 varDeclStmt
